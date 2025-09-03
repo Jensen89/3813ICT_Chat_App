@@ -1,1 +1,78 @@
-<p>users works!</p>
+<!-- src/app/components/users/users.component.html -->
+<div class="users-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>User Management</h1>
+    <button (click)="goBack()" class="btn-back">Back to Dashboard</button>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+
+  <!-- Super Admin Only Notice -->
+  <div class="info-box">
+    <p><strong>Super Admin Access:</strong> Only Super Administrators can manage users and roles.</p>
+  </div>
+
+  <!-- Users Table -->
+  <div class="users-table">
+    <h2>All Users</h2>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Groups</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of allUsers">
+          <td>
+            {{ user.username }}
+            <span *ngIf="user.id === currentUser?.id" class="current-badge">(You)</span>
+          </td>
+          <td>{{ user.email }}</td>
+          <td>
+            <span class="role-badge" [ngClass]="{
+              'role-super': user.roles.includes('super_admin'),
+              'role-admin': user.roles.includes('group_admin') && !user.roles.includes('super_admin'),
+              'role-user': !user.roles.includes('group_admin')
+            }">
+              {{ getRoleDisplay(user) }}
+            </span>
+          </td>
+          <td>{{ getGroupCount(user) }} groups</td>
+          <td>
+            <div class="action-buttons">
+
+              
+
+              
+              <!-- Delete button -->
+              <button 
+                (click)="deleteUser(user)"
+                class="btn-small btn-danger"
+                [disabled]="user.id === currentUser?.id">
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Role Explanation -->
+  <div class="role-explanation">
+    <h3>Role Permissions</h3>
+    <ul>
+      <li><strong>User:</strong> Can join groups, view channels, and participate in chats (Phase 2)</li>
+      <li><strong>Group Admin:</strong> Can create and manage groups, create channels, add/remove members</li>
+      <li><strong>Super Admin:</strong> Full system access, can promote users, delete any user, access all groups</li>
+    </ul>
+  </div>
+</div>

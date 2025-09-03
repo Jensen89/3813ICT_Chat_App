@@ -81,14 +81,34 @@ export class Api {
   }
 
   isSuperAdmin(): boolean {
-    return this.currentUser?.roles.includes('super_admin') || false;
+    return this.hasRole('super_admin');
   }
 
   isGroupAdmin(): boolean {
-    return this.currentUser?.roles.includes('group_admin') || false;
+    return this.hasRole('group_admin');
+  }
+
+  hasRole(role: string): boolean {
+    return this.currentUser ? this.currentUser.roles.includes(role) : false;
   }
 
 
+  //User Methods
+  getUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.baseUrl}/users`);
+  }
+
+  createUser(username: string, email: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/users`, { username, email, password });
+  }
+
+  deleteUser(userId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/users/${userId}`);
+  }
+
+  promoteUser(userId: string, role: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/users/${userId}/promote`, { role });
+  }
 
 
 }
