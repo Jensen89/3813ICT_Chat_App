@@ -72,7 +72,22 @@ export class Api {
       ));
   }
 
-  
+  getCurrentUser(): User | null {
+    return this.currentUser;
+  }
+
+  isLoggedIn(): boolean {
+    return this.currentUser !== null;
+  }
+
+  isSuperAdmin(): boolean {
+    return this.currentUser?.roles.includes('super_admin') || false;
+  }
+
+  isGroupAdmin(): boolean {
+    return this.currentUser?.roles.includes('group_admin') || false;
+  }
+
 
 
 

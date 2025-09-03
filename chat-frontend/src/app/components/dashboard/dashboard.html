@@ -1,1 +1,63 @@
-<p>dashboard works!</p>
+<!-- src/app/components/dashboard/dashboard.component.html -->
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>Chat Application Dashboard</h1>
+    <div class="user-info">
+      <span>Welcome, <strong>{{ currentUser?.username }}</strong></span>
+      <span class="role-badge">{{ getRoleDisplay() }}</span>
+      <button (click)="logout()" class="btn-logout">Logout</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="dashboard-content">
+    
+    <!-- Admin Actions -->
+    <div class="admin-section" *ngIf="isGroupAdmin()">
+      <h2>Administration</h2>
+      <div class="action-cards">
+        <div class="action-card" (click)="navigateToGroups()">
+          <h3>Manage Groups</h3>
+          <p>Create, edit, and delete groups</p>
+        </div>
+        
+        <div class="action-card" *ngIf="isSuperAdmin()" (click)="navigateToUsers()">
+          <h3>Manage Users</h3>
+          <p>View all users and manage roles</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h2>Quick Actions</h2>
+      <div class="action-buttons">
+        <button (click)="navigateToGroups()" class="btn-primary">
+          All Groups
+        </button>
+        <button class="btn-disabled" disabled>
+          Chat (Phase 2)
+        </button>
+        <button class="btn-disabled" disabled>
+          Messages (Phase 2)
+        </button>
+      </div>
+    </div>
+
+    <!-- Phase 1 Notice -->
+    <div class="info-notice">
+      <h3>Phase 1 Implementation</h3>
+      <p>This is Phase 1 of the chat application. The following features are implemented:</p>
+      <ul>
+        <li>User authentication and registration</li>
+        <li>Role-based access (Super Admin, Group Admin, User)</li>
+        <li>Group and channel management</li>
+        <li>User assignment to groups</li>
+        <li>All data stored in localStorage</li>
+      </ul>
+      <p><strong>Phase 2 will include:</strong> Real-time chat, MongoDB, Socket.io, image uploads, and video chat.</p>
+    </div>
+  </div>
+</div>
