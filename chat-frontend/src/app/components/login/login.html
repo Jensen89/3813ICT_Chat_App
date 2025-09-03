@@ -5,7 +5,7 @@
     <h2>Phase 1 - 3813ICT</h2>
     
     <!-- Login Form -->
-    <div class="form-section">
+    <div *ngIf="!showRegister" class="form-section">
       <h3>Login</h3>
       
       <div class="form-group">
@@ -28,6 +28,10 @@
       
       <button (click)="login()" class="btn-primary">Login</button>
       
+      <p class="switch-form">
+        Don't have an account? 
+        <button (click)="toggleRegister()">Register here</button>
+      </p>
       
       <div class="info-box">
         <p><strong>Default Login:</strong></p>
@@ -35,7 +39,42 @@
         <p>Password: 123</p>
       </div>
     </div>
-
+    
+    <!-- Register Form -->
+    <div *ngIf="showRegister" class="form-section">
+      <h3>Register New User</h3>
+      
+      <div class="form-group">
+        <label>Username:</label>
+        <input 
+          type="text" 
+          [(ngModel)]="regUsername" 
+          placeholder="Choose username">
+      </div>
+      
+      <div class="form-group">
+        <label>Email:</label>
+        <input 
+          type="email" 
+          [(ngModel)]="regEmail" 
+          placeholder="Enter email">
+      </div>
+      
+      <div class="form-group">
+        <label>Password:</label>
+        <input 
+          type="password" 
+          [(ngModel)]="regPassword" 
+          placeholder="Choose password">
+      </div>
+      
+      <button (click)="register()" class="btn-primary">Register</button>
+      
+      <p class="switch-form">
+        Already have an account? 
+        <button (click)="toggleRegister()">Login here</button>
+      </p>
+    </div>
     
     <!-- Messages -->
     <div *ngIf="errorMessage" class="error-message">

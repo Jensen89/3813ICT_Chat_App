@@ -54,7 +54,7 @@ function initialiseDefaultData() {
         users: [
             {   
                 id: 1,
-                username: 'Super',
+                username: 'super',
                 email: 'super@admin.com',
                 password: '123',
                 roles: ['super_admin', 'group_admin', 'user'], 
@@ -65,6 +65,7 @@ function initialiseDefaultData() {
 }
 
 let currentUser = null;
+
 
 //AUTH ROUTES
 
@@ -95,3 +96,65 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
+
+//USER ROUTES
+
+//Get all users
+app.get('/api/users', (req, res) => {
+    const usersWithoutPasswords = data.users.map(({ password, ...user }) => user);
+    res.json(usersWithoutPasswords);
+});
+
+//Reg new user
+app.post('/api/users', (req, res) => {
+    const { username, email, password } = req.body;
+
+    if (data.users.find(u => u.username === username)) {
+        return res.status(400).json({ success: false, message: 'Username already exists' });
+    }
+
+    const newUser = {
+        id: Date.now().toString(),
+        username,
+        email,
+        password,
+        roles: ['user'],
+        groups: [1]
+    };
+
+    data.users.push(newUser);
+    saveData();
+
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.join ({ success: true, user: userWithoutPassword });
+});
+
+//Delete user
+app.delete('/api/users/:id', (req, res) => {
+    data.users = data.users.filter(u => u.id !== req.params.id);
+
+    //add removal from groups and channels here
+
+    saveData();
+    res.json({ success: true, message: 'User deleted' });
+});
+
+//Promote user
+app.post('/api/users/:id/promote', (req, res) => {
+    const { role } = req.body;
+    const user = data.users.find(u => u.id === req.params.id);
+
+    if (role === 'user') {
+        user.roles = ['user'];
+    } else if (role === 'group_admin') {
+        user.roles = ['user', 'group_admin'];
+    } else if (role === 'super_admin') {
+        user.roles = ['user', 'group_admin', 'super_admin'];
+    }
+
+    saveData();
+
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ success: true, user: userWithoutPassword });
+});
+    

@@ -2,12 +2,66 @@
   "users": [
     {
       "id": 1,
-      "username": "Super",
+      "username": "super",
       "email": "super@admin.com",
       "password": "123",
       "roles": [
         "super_admin",
         "group_admin",
+        "user"
+      ],
+      "groups": [
+        1
+      ]
+    },
+    {
+      "id": "1756907233116",
+      "username": "test",
+      "email": "test@test.com",
+      "password": "abc",
+      "roles": [
+        "user"
+      ],
+      "groups": []
+    },
+    {
+      "id": "1756908726429",
+      "username": "john",
+      "email": "john@test.com",
+      "password": "1234",
+      "roles": [
+        "user"
+      ],
+      "groups": []
+    },
+    {
+      "id": "1756908985402",
+      "username": "bob",
+      "email": "bob@test.com",
+      "password": "abcd",
+      "roles": [
+        "user"
+      ],
+      "groups": []
+    },
+    {
+      "id": "1756909327672",
+      "username": "bob1",
+      "email": "bob@test.com",
+      "password": "abcd",
+      "roles": [
+        "user"
+      ],
+      "groups": [
+        1
+      ]
+    },
+    {
+      "id": "1756909446792",
+      "username": "bob11",
+      "email": "bob@test.com",
+      "password": "abcd",
+      "roles": [
         "user"
       ],
       "groups": [

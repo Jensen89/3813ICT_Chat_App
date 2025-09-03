@@ -16,6 +16,12 @@ export class Login {
   username: string = '';
   password: string = '';
 
+  //Registration form fields
+  showRegister: boolean = false;
+  regUsername: string = '';
+  regEmail: string = '';
+  regPassword: string = '';
+
   //Messages
   errorMessage: string = '';
   successMessage: string = '';
@@ -49,5 +55,41 @@ export class Login {
     });
   }
 
+  register(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.loading = true;
+
+    if (!this.regUsername || !this.regEmail || !this.regPassword) {
+      this.errorMessage = 'Please fill in all registration fields.';
+      this.loading = false;
+      return;
+    }
+
+    this.api.createUser(this.regUsername, this.regEmail, this.regPassword).subscribe({
+      next : (response) => {
+        if (response.success) {
+          this.successMessage = 'Registration successful! You can now log in.';
+          this.showRegister = false;
+          this.regUsername = '';
+          this.regEmail = '';
+          this.regPassword = '';
+        } else {
+          this.errorMessage = response.message || 'Registration failed. Please try again.';
+        }
+        this.loading = false;
+      },
+      error : (error) => {
+        this.errorMessage = 'An error occurred during registration. Please try again later.';
+        this.loading = false;
+      }
+    });
+  }
+
+  toggleRegister(): void {
+    this.showRegister = !this.showRegister;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
 
 }
