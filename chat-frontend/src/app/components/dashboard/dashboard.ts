@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Api, User } from '../../services/api';
+import { Api, User, Group } from '../../services/api';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,6 +12,7 @@ import { Api, User } from '../../services/api';
 export class Dashboard implements OnInit {
 
   currentUser: User | null = null;
+  userGroups: Group[] = [];
   
   loading = true;
 
@@ -24,6 +25,7 @@ export class Dashboard implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
+    this.loadUserGroups();
   }
 
   getRoleDisplay(): string {
@@ -37,6 +39,23 @@ export class Dashboard implements OnInit {
       return 'User';
     }
   }
+
+  loadUserGroups(): void {
+    this.api.getGroups().subscribe({
+      next: (groups) => {
+        //Filter groups where user is a member
+        this.userGroups = groups.filter(group => 
+          group.members.includes(this.currentUser!.id)
+        );
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading groups:', error);
+        this.loading = false;
+      }
+    });
+  }
+
 
   isSuperAdmin(): boolean {
     return this.api.isSuperAdmin();

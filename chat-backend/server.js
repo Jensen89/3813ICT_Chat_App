@@ -60,7 +60,9 @@ function initialiseDefaultData() {
                 roles: ['super_admin', 'group_admin', 'user'], 
                 groups: [1]
             }
-        ]
+        ],
+        groups: [],
+        channels: []
     }
 }
 
@@ -119,14 +121,14 @@ app.post('/api/users', (req, res) => {
         email,
         password,
         roles: ['user'],
-        groups: [1]
+        groups: []
     };
 
     data.users.push(newUser);
     saveData();
 
     const { password: _, ...userWithoutPassword } = newUser;
-    res.join ({ success: true, user: userWithoutPassword });
+    res.json ({ success: true, user: userWithoutPassword });
 });
 
 //Delete user
@@ -158,3 +160,106 @@ app.post('/api/users/:id/promote', (req, res) => {
     res.json({ success: true, user: userWithoutPassword });
 });
     
+
+//GROUP ROUTES
+
+app.get('/api/groups', (req, res) => {
+    res.json(data.groups);
+});
+
+//Create group
+app.post('/api/groups', (req, res) => {
+    const { name } = req.body;
+    
+    const newGroup = {
+        id: Date.now().toString(),
+        name,
+        admins: [currentUser?.id || '1'],
+        members: [currentUser?.id || '1']
+    };
+    
+    data.groups.push(newGroup);
+    
+    //Update users groups
+    const user = data.users.find(u => u.id === (currentUser?.id || '1'));
+    if (user) {
+        user.groups.push(newGroup.id);
+    }
+    
+    saveData();
+    res.json({ success: true, group: newGroup });
+});
+
+//Add user to group
+app.post('/api/groups/:id/members', (req, res) => {
+    const { userId } = req.body;
+    const group = data.groups.find(g => g.id === req.params.id);
+    
+    if (!group) {
+        return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+    
+    if (!group.members.includes(userId)) {
+        group.members.push(userId);
+        
+        //Add group to user's groups
+        const user = data.users.find(u => u.id === userId);
+        if (user && !user.groups.includes(req.params.id)) {
+            user.groups.push(req.params.id);
+        }
+        
+        //Add user to all channels in the group
+        data.channels
+            .filter(c => c.groupId === req.params.id)
+            .forEach(channel => {
+                if (!channel.members.includes(userId)) {
+                    channel.members.push(userId);
+                }
+            });
+        
+        saveData();
+    }
+    res.json({ success: true });
+});
+
+//Remove user from group
+app.delete('/api/groups/:id/members/:userId', (req, res) => {
+    const group = data.groups.find(g => g.id === req.params.id);
+    
+    if (!group) {
+        return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+    
+    group.members = group.members.filter(id => id !== req.params.userId);
+    group.admins = group.admins.filter(id => id !== req.params.userId);
+    
+    //Remove group from user's groups
+    const user = data.users.find(u => u.id === req.params.userId);
+    if (user) {
+        user.groups = user.groups.filter(id => id !== req.params.id);
+    }
+    
+    // Remove from channels in this group
+    data.channels
+        .filter(c => c.groupId === req.params.id)
+        .forEach(channel => {
+            channel.members = channel.members.filter(id => id !== req.params.userId);
+        });
+    
+    saveData();
+    res.json({ success: true });
+});
+
+//Delete group
+app.delete('/api/groups/:id', (req, res) => {
+    data.groups = data.groups.filter(g => g.id !== req.params.id);
+    data.channels = data.channels.filter(c => c.groupId !== req.params.id);
+    
+    //Remove group from all users
+    data.users.forEach(user => {
+        user.groups = user.groups.filter(id => id !== req.params.id);
+    });
+    
+    saveData();
+    res.json({ success: true });
+});

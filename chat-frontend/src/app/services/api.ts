@@ -110,5 +110,26 @@ export class Api {
     return this.http.post<any>(`${this.baseUrl}/users/${userId}/promote`, { role });
   }
 
+  //Group Methods
+
+  getGroups(): Observable<Group[]> {
+    return this.http.get<Group[]>(`${this.baseUrl}/groups`);
+  }
+
+  createGroup(name: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/groups`, { name });
+  }
+
+  deleteGroup(groupId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/groups/${groupId}`);
+  }
+
+  addUserToGroup(groupId: string, userId: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/groups/${groupId}/members`, { userId });
+  }
+
+  removeUserFromGroup(groupId: string, userId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/groups/${groupId}/members/${userId}`);
+  }
 
 }

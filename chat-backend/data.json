@@ -11,7 +11,7 @@
         "user"
       ],
       "groups": [
-        1
+        "1756914246404"
       ]
     },
     {
@@ -22,7 +22,9 @@
       "roles": [
         "user"
       ],
-      "groups": []
+      "groups": [
+        "1756914246404"
+      ]
     },
     {
       "id": "1756908726429",
@@ -43,30 +45,21 @@
         "user"
       ],
       "groups": []
-    },
+    }
+  ],
+  "groups": [
     {
-      "id": "1756909327672",
-      "username": "bob1",
-      "email": "bob@test.com",
-      "password": "abcd",
-      "roles": [
-        "user"
+      "id": "1756914246404",
+      "name": "group1",
+      "admins": [
+        "1"
       ],
-      "groups": [
-        1
-      ]
-    },
-    {
-      "id": "1756909446792",
-      "username": "bob11",
-      "email": "bob@test.com",
-      "password": "abcd",
-      "roles": [
-        "user"
-      ],
-      "groups": [
+      "members": [
+        "1",
+        "1756907233116",
         1
       ]
     }
-  ]
+  ],
+  "channels": []
 }
