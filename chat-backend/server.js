@@ -92,11 +92,7 @@ app.post('/api/auth/logout', (req, res) => {
     res.json({ success: true, message: 'Logged out successfully' });
 });
 
-loadData();
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
 
 
 //USER ROUTES
@@ -262,4 +258,50 @@ app.delete('/api/groups/:id', (req, res) => {
     
     saveData();
     res.json({ success: true });
+});
+
+
+//CHANNEL ROUTES
+
+//Get channels for a group
+app.get('/api/groups/:groupId/channels', (req, res) => {
+    const groupChannels = data.channels.filter(c => c.groupId === req.params.groupId);
+    res.json(groupChannels);
+});
+
+//Create channel
+app.post('/api/channels', (req, res) => {
+    const { name, groupId } = req.body;
+    
+    const group = data.groups.find(g => g.id === groupId);
+    if (!group) {
+        return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+    
+    const newChannel = {
+        id: Date.now().toString(),
+        name,
+        groupId,
+        members: [...group.members]
+    };
+    
+    data.channels.push(newChannel);
+    saveData();
+    
+    res.json({ success: true, channel: newChannel });
+});
+
+//Delete channel
+app.delete('/api/channels/:id', (req, res) => {
+    data.channels = data.channels.filter(c => c.id !== req.params.id);
+    saveData();
+    res.json({ success: true });
+});
+
+
+//Load data and start server
+loadData();
+
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });

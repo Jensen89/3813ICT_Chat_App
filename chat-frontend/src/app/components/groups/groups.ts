@@ -208,6 +208,10 @@ export class Groups implements OnInit {
     this.router.navigate(['/channels', groupId]);
   }
 
+  navigateToDashboard(): void {
+    this.router.navigate(['/dashboard']);
+  }
+
   getGroupMembers(group: Group): string {
     const memberNames = group.members
       .map(id => this.allUsers.find(u => u.id === id)?.username || 'Unknown')

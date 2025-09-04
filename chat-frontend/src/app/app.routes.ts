@@ -13,7 +13,7 @@ export const routes: Routes = [
     { path : 'dashboard', component: Dashboard },
     { path : 'users', component: Users },
     { path : 'groups', component: Groups },
-    { path : 'channels', component: Channels },
+    { path : 'channels/:groupId', component: Channels },
     { path : 'chat/:groupID /:channelId', component: Chat },
     { path : '**', redirectTo: 'login' }
 

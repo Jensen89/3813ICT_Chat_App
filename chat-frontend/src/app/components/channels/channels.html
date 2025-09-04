@@ -1,1 +1,80 @@
-<p>channels works!</p>
+<!-- src/app/components/channels/channels.component.html -->
+<div class="channels-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>{{ group?.name }} - Channels</h1>
+    <button (click)="goBack()" class="btn-back">Back to Groups</button>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+
+  <!-- Create Channel Section (Group Admins only) -->
+  <div class="create-section" *ngIf="canManageChannels()">
+    <button *ngIf="!showCreateForm" (click)="showCreateForm = true" class="btn-primary">
+      Create New Channel
+    </button>
+    
+    <div *ngIf="showCreateForm" class="create-form">
+      <h3>Create New Channel</h3>
+      <input 
+        type="text" 
+        [(ngModel)]="newChannelName" 
+        placeholder="Enter channel name"
+        (keyup.enter)="createChannel()">
+      <div class="form-buttons">
+        <button (click)="createChannel()" class="btn-primary">Create</button>
+        <button (click)="showCreateForm = false; newChannelName = ''" class="btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Channels List -->
+  <div class="channels-list">
+    <h2>Channels</h2>
+    
+    <div *ngIf="channels.length === 0" class="no-channels">
+      <p>No channels have been created in this group yet.</p>
+    </div>
+    
+    <div class="channels-grid">
+      <div class="channel-card" *ngFor="let channel of channels">
+        <div class="channel-header">
+          <h3># {{ channel.name }}</h3>
+          <span class="member-count">{{ getMemberCount(channel) }} members</span>
+        </div>
+        
+        <div class="channel-actions">
+          <!-- Enter Chat (Phase 2) -->
+          <button 
+            *ngIf="isMemberOfChannel(channel)" 
+            (click)="navigateToChat(channel.id)" 
+            class="btn-primary">
+            Enter Chat (Phase 2)
+          </button>
+          
+          <button 
+            *ngIf="!isMemberOfChannel(channel)" 
+            class="btn-disabled" 
+            disabled>
+            Not a member
+          </button>
+          
+          <!-- Admin Actions -->
+          <button 
+            *ngIf="canManageChannels()" 
+            (click)="deleteChannel(channel)" 
+            class="btn-danger">
+            Delete Channel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Box -->
+  <div class="info-box">
+    <p><strong>Note:</strong> Chat functionality will be implemented in Phase 2 with Socket.io for real-time messaging.</p>
+  </div>
+</div>

@@ -132,4 +132,18 @@ export class Api {
     return this.http.delete<any>(`${this.baseUrl}/groups/${groupId}/members/${userId}`);
   }
 
+  //Channel Methods
+
+  getChannelsByGroup(groupId: string): Observable<Channel[]> {
+    return this.http.get<Channel[]>(`${this.baseUrl}/groups/${groupId}/channels`);
+  }
+
+  createChannel(name: string, groupId: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/channels`, { name, groupId });
+  }
+
+  deleteChannel(channelId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/channels/${channelId}`);
+  }
+
 }
