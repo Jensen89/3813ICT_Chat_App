@@ -148,6 +148,45 @@ export class Channels implements OnInit {
     }
   }
 
+  joinChannel(channel: Channel): void {
+    if (!this.currentUser) return;
+
+    this.loading = true;
+    this.api.joinChannel(channel.id, this.currentUser.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = `Joined channel "${channel.name}"`;
+          this.loadChannels();
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to join channel';
+        this.loading = false;
+      }
+    });
+  }
+
+  leaveChannel(channel: Channel): void {
+    if (!this.currentUser) return;
+
+    this.loading = true;
+    this.api.leaveChannel(channel.id, this.currentUser.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = `Left channel "${channel.name}"`;
+          this.loadChannels();
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to leave channel';
+        this.loading = false;
+      }
+    });
+  }
+
+
   navigateToChat(channelId: string): void {
     // Phase 2 - For now just navigate to placeholder
     this.router.navigate(['/chat', this.group!.id, channelId]);

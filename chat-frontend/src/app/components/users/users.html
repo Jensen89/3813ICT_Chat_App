@@ -1,4 +1,3 @@
-<!-- src/app/components/users/users.component.html -->
 <div class="users-container">
   <!-- Header -->
   <div class="header">
@@ -48,9 +47,31 @@
           <td>{{ getGroupCount(user) }} groups</td>
           <td>
             <div class="action-buttons">
-
+              <!-- Promotion buttons -->
+              <button 
+                *ngIf="!user.roles.includes('group_admin')" 
+                (click)="promoteToGroupAdmin(user)"
+                class="btn-small btn-primary"
+                [disabled]="user.id === currentUser?.id">
+                → Group Admin
+              </button>
               
-
+              <button 
+                *ngIf="user.roles.includes('group_admin') && !user.roles.includes('super_admin')" 
+                (click)="promoteToSuperAdmin(user)"
+                class="btn-small btn-primary"
+                [disabled]="user.id === currentUser?.id">
+                → Super Admin
+              </button>
+              
+              <!-- Demotion button -->
+              <button 
+                *ngIf="user.roles.includes('group_admin')" 
+                (click)="demoteToUser(user)"
+                class="btn-small btn-warning"
+                [disabled]="user.id === currentUser?.id">
+                → User
+              </button>
               
               <!-- Delete button -->
               <button 
@@ -64,15 +85,5 @@
         </tr>
       </tbody>
     </table>
-  </div>
-
-  <!-- Role Explanation -->
-  <div class="role-explanation">
-    <h3>Role Permissions</h3>
-    <ul>
-      <li><strong>User:</strong> Can join groups, view channels, and participate in chats (Phase 2)</li>
-      <li><strong>Group Admin:</strong> Can create and manage groups, create channels, add/remove members</li>
-      <li><strong>Super Admin:</strong> Full system access, can promote users, delete any user, access all groups</li>
-    </ul>
   </div>
 </div>

@@ -13,6 +13,10 @@ export class Dashboard implements OnInit {
 
   currentUser: User | null = null;
   userGroups: Group[] = [];
+  allUsers: User[] = [];
+  
+  errorMessage: string = '';
+  successMessage: string = '';
   
   loading = true;
 
@@ -26,6 +30,7 @@ export class Dashboard implements OnInit {
       return;
     }
     this.loadUserGroups();
+    this.loadUsers();
   }
 
   getRoleDisplay(): string {
@@ -56,6 +61,39 @@ export class Dashboard implements OnInit {
     });
   }
 
+  loadUsers(): void {
+    this.loading = true;
+    this.api.getUsers().subscribe({
+      next: (users) => {
+        this.allUsers = users;
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to load users. Please try again later.';
+        this.loading = false;
+      }
+    });
+  }
+
+  deleteUser(user: User): void {
+     if (confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
+      this.loading = true;
+      this.api.deleteUser(user.id).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.successMessage = `User "${user.username}" deleted successfully.`;
+            this.loadUsers();
+            this.navigateToLogin();
+          } 
+          this.loading = false;
+        },
+        error: (error) => {
+          this.errorMessage = 'Failed to delete user. Please try again later.';
+          this.loading = false;
+        }
+      });
+    }
+  }
 
   isSuperAdmin(): boolean {
     return this.api.isSuperAdmin();
@@ -75,6 +113,10 @@ export class Dashboard implements OnInit {
 
   navigateToUsers(): void {
     this.router.navigate(['/users']);
+  }
+
+  navigateToLogin(): void {
+    this.router.navigate(['/login']);
   }
 
   logout(): void {

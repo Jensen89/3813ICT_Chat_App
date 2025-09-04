@@ -116,8 +116,8 @@ export class Api {
     return this.http.get<Group[]>(`${this.baseUrl}/groups`);
   }
 
-  createGroup(name: string): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/groups`, { name });
+  createGroup(name: string, adminId?: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/groups`, { name, adminId });
   }
 
   deleteGroup(groupId: string): Observable<any> {
@@ -144,6 +144,14 @@ export class Api {
 
   deleteChannel(channelId: string): Observable<any> {
     return this.http.delete<any>(`${this.baseUrl}/channels/${channelId}`);
+  }
+
+  joinChannel(channelId: string, userId: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/channels/${channelId}/join`, { userId });
+  }
+
+  leaveChannel(channelId: string, userId: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/channels/${channelId}/leave`, { userId });
   }
 
 }

@@ -12,6 +12,7 @@
 
   <!-- Create Channel Section (Group Admins only) -->
   <div class="create-section" *ngIf="canManageChannels()">
+    
     <button *ngIf="!showCreateForm" (click)="showCreateForm = true" class="btn-primary">
       Create New Channel
     </button>
@@ -36,6 +37,7 @@
     
     <div *ngIf="channels.length === 0" class="no-channels">
       <p>No channels have been created in this group yet.</p>
+      <p *ngIf="canManageChannels()">Create the first channel using the button above!</p>
     </div>
     
     <div class="channels-grid">
@@ -45,8 +47,25 @@
           <span class="member-count">{{ getMemberCount(channel) }} members</span>
         </div>
         
+        <div class="channel-status">
+          <span *ngIf="isMemberOfChannel(channel)" class="member-badge">
+            ✅ You're a member
+          </span>
+          <span *ngIf="!isMemberOfChannel(channel)" class="not-member-badge">
+            ❌ Not a member
+          </span>
+        </div>
+        
         <div class="channel-actions">
-          <!-- Enter Chat (Phase 2) -->
+          <!-- Join Channel -->
+          <button 
+            *ngIf="!isMemberOfChannel(channel)" 
+            (click)="joinChannel(channel)" 
+            class="btn-primary">
+            Join Channel
+          </button>
+          
+          <!-- Enter Chat (for members) -->
           <button 
             *ngIf="isMemberOfChannel(channel)" 
             (click)="navigateToChat(channel.id)" 
@@ -54,11 +73,12 @@
             Enter Chat (Phase 2)
           </button>
           
+          <!-- Leave Channel -->
           <button 
-            *ngIf="!isMemberOfChannel(channel)" 
-            class="btn-disabled" 
-            disabled>
-            Not a member
+            *ngIf="isMemberOfChannel(channel)" 
+            (click)="leaveChannel(channel)" 
+            class="btn-warning">
+            Leave Channel
           </button>
           
           <!-- Admin Actions -->
@@ -71,10 +91,5 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Info Box -->
-  <div class="info-box">
-    <p><strong>Note:</strong> Chat functionality will be implemented in Phase 2 with Socket.io for real-time messaging.</p>
   </div>
 </div>

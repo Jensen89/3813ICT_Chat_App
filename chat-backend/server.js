@@ -131,7 +131,16 @@ app.post('/api/users', (req, res) => {
 app.delete('/api/users/:id', (req, res) => {
     data.users = data.users.filter(u => u.id !== req.params.id);
 
-    //add removal from groups and channels here
+    //Remove from groups
+    data.groups.forEach(group => {
+        group.members = group.members.filter(id => id !== req.params.id);
+        group.admins = group.admins.filter(id => id !== req.params.id);
+    });
+    
+    //Remove from channels
+    data.channels.forEach(channel => {
+        channel.members = channel.members.filter(id => id !== req.params.id);
+    });
 
     saveData();
     res.json({ success: true, message: 'User deleted' });
@@ -165,13 +174,15 @@ app.get('/api/groups', (req, res) => {
 
 //Create group
 app.post('/api/groups', (req, res) => {
-    const { name } = req.body;
+    const { name, adminId } = req.body;
+
+    const userId = adminId
     
     const newGroup = {
         id: Date.now().toString(),
         name,
-        admins: [currentUser?.id || '1'],
-        members: [currentUser?.id || '1']
+        admins: [userId],
+        members: [userId]
     };
     
     data.groups.push(newGroup);
@@ -282,7 +293,7 @@ app.post('/api/channels', (req, res) => {
         id: Date.now().toString(),
         name,
         groupId,
-        members: [...group.members]
+        members: []
     };
     
     data.channels.push(newChannel);
@@ -296,6 +307,44 @@ app.delete('/api/channels/:id', (req, res) => {
     data.channels = data.channels.filter(c => c.id !== req.params.id);
     saveData();
     res.json({ success: true });
+});
+
+// Join channel
+app.post('/api/channels/:id/join', (req, res) => {
+    const { userId } = req.body;
+    const channel = data.channels.find(c => c.id === req.params.id);
+    
+    if (!channel) {
+        return res.status(404).json({ success: false, message: 'Channel not found' });
+    }
+    
+    // Check if user is member of the group
+    const group = data.groups.find(g => g.id === channel.groupId);
+    if (!group || !group.members.includes(userId)) {
+        return res.status(403).json({ success: false, message: 'You must be a member of the group to join this channel' });
+    }
+    
+    if (!channel.members.includes(userId)) {
+        channel.members.push(userId);
+        saveData();
+    }
+    
+    res.json({ success: true, message: 'Joined channel successfully' });
+});
+
+// Leave channel
+app.post('/api/channels/:id/leave', (req, res) => {
+    const { userId } = req.body;
+    const channel = data.channels.find(c => c.id === req.params.id);
+    
+    if (!channel) {
+        return res.status(404).json({ success: false, message: 'Channel not found' });
+    }
+    
+    channel.members = channel.members.filter(id => id !== userId);
+    saveData();
+    
+    res.json({ success: true, message: 'Left channel successfully' });
 });
 
 

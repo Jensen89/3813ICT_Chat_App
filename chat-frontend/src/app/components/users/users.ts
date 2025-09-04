@@ -76,6 +76,87 @@ export class Users implements OnInit {
     }
   }
 
+  promoteToGroupAdmin(user: User): void {
+    if (user.roles.includes('group_admin')) {
+      this.errorMessage = 'User is already a Group Admin';
+      return;
+    }
+
+    this.loading = true;
+    this.api.promoteUser(user.id, 'group_admin').subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = `${user.username} promoted to Group Admin`;
+          this.loadUsers();
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to promote user';
+        this.loading = false;
+      }
+    });
+  }
+
+  promoteToSuperAdmin(user: User): void {
+    if (user.roles.includes('super_admin')) {
+      this.errorMessage = 'User is already a Super Admin';
+      return;
+    }
+
+    this.loading = true;
+    this.api.promoteUser(user.id, 'super_admin').subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = `${user.username} promoted to Super Admin`;
+          this.loadUsers();
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to promote user';
+        this.loading = false;
+      }
+    });
+  }
+
+  demoteToUser(user: User): void {
+    //Don't allow demoting yourself
+    if (user.id === this.currentUser!.id) {
+      this.errorMessage = 'You cannot demote yourself';
+      return;
+    }
+
+    //Don't allow removing the last super admin
+    if (user.roles.includes('super_admin')) {
+      const superAdminCount = this.allUsers.filter(u => 
+        u.roles.includes('super_admin')
+      ).length;
+      
+      if (superAdminCount <= 1) {
+        this.errorMessage = 'Cannot demote the last Super Admin';
+        return;
+      }
+    }
+
+    this.loading = true;
+    this.api.promoteUser(user.id, 'user').subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = `${user.username} demoted to regular User`;
+          this.loadUsers();
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to demote user';
+        this.loading = false;
+      }
+    });
+  }
+
+
+
   getGroupCount(user: User): number {
     return user.groups.length;
   }

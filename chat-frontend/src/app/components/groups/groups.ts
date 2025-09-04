@@ -94,7 +94,8 @@ export class Groups implements OnInit {
     }
 
     this.loading = true;
-    this.api.createGroup(this.newGroupName).subscribe({
+    const adminId = this.currentUser?.id;
+    this.api.createGroup(this.newGroupName, adminId).subscribe({
       next: (response) => {
         if (response.success) {
           this.successMessage = `Group "${this.newGroupName}" created successfully.`;
@@ -204,6 +205,42 @@ export class Groups implements OnInit {
     }
   }
 
+  removeMember(group: Group, member: User): void {
+    if (!member || !group) return;
+
+    // Prevent removing the last admin
+    if (group.admins.includes(member.id) && group.admins.length === 1) {
+      this.errorMessage = `Cannot remove ${member.username} — they are the only admin for "${group.name}".`;
+      return;
+    }
+
+    // Confirm
+    if (!confirm(`Remove ${member.username} from "${group.name}"? This cannot be undone.`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.api.removeUserFromGroup(group.id, member.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Different messages if removing yourself vs removing someone else
+          if (member.id === this.currentUser?.id) {
+            this.successMessage = `You have left the group "${group.name}".`;
+          } else {
+            this.successMessage = `${member.username} removed from "${group.name}".`;
+          }
+          this.loadData();
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = `Failed to remove ${member.username}. Please try again later.`;
+        this.loading = false;
+      }
+    });
+  }
+
+
   navigateToChannels(groupId: string): void {
     this.router.navigate(['/channels', groupId]);
   }
@@ -212,19 +249,13 @@ export class Groups implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
-  getGroupMembers(group: Group): string {
-    const memberNames = group.members
-      .map(id => this.allUsers.find(u => u.id === id)?.username || 'Unknown')
-      .slice(0, 3);
-    
-    const remaining = group.members.length - 3;
-    if (remaining > 0) {
-      memberNames.push(`+${remaining} more`);
-    }
-    
-    return memberNames.join(', ');
-  }
 
+
+  getMemberUsers(group: Group): User[] {
+  return group.members
+    .map(id => this.allUsers.find(u => u.id === id))
+    .filter((u): u is User => !!u);
+}
 
 }
  

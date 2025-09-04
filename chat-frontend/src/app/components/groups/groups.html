@@ -2,7 +2,7 @@
 <div class="groups-container">
   <!-- Header -->
   <div class="header">
-    <h1>Groups Management</h1>
+    <h1>Groups</h1>
     <button (click)="navigateToDashboard()" class="btn-back">Back to Dashboard</button>
   </div>
 
@@ -68,13 +68,27 @@
           <h3>{{ group.name }}</h3>
           <span class="member-count">{{ group.members.length }} members</span>
         </div>
-        
-        <div class="group-info">
-          <p class="members-preview">
-            Members: {{ getGroupMembers(group) }}
-          </p>
-        </div>
-        
+
+          <ul class="members-list">
+            <li *ngFor="let member of getMemberUsers(group);" class="member-row">
+              <span class="member-name">{{ member.username }}</span>
+
+              <!-- Remove button only for admins who can manage the group -->
+              <button *ngIf="canManageGroup(group)"
+                      (click)="removeMember(group, member)"
+                      class="btn-small btn-danger member-action">
+                Remove
+              </button>
+
+              <!-- Optionally show Leave for current user -->
+              <button *ngIf="member.id === currentUser?.id && isMemberOfGroup(group) && !canManageGroup(group)"
+                      (click)="leaveGroup(group)"
+                      class="btn-small btn-warning member-action">
+                Leave
+              </button>
+            </li>
+          </ul>
+
         <div class="group-actions">
           <!-- View Channels (for members) -->
           <button 
