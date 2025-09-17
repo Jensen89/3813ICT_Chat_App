@@ -124,6 +124,10 @@ export class Dashboard implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  navigateToProfile(): void {
+    this.router.navigate(['/profile']);
+  }
+
   logout(): void {
     this.socketService.disconnect();
     this.api.logout();

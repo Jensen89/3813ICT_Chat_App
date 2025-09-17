@@ -8,6 +8,7 @@ export interface Message {
   userId: string;
   username: string;
   content: string;
+  profileImage?: string | null;
   timestamp: Date;
 }
 

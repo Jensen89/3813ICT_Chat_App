@@ -1,0 +1,76 @@
+<div class="profile-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>Profile Settings</h1>
+    <button (click)="goBack()" class="btn-back">Back to Dashboard</button>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+
+  <!-- Profile Info -->
+  <div class="profile-card">
+    <h2>User Information</h2>
+    <div class="user-info">
+      <p><strong>Username:</strong> {{ currentUser?.username }}</p>
+      <p><strong>Email:</strong> {{ currentUser?.email }}</p>
+    </div>
+  </div>
+
+  <!-- Profile Image Section -->
+  <div class="profile-card">
+    <h2>Profile Picture</h2>
+    
+    <div class="image-section">
+      <!-- Current/Preview Image -->
+      <div class="image-preview">
+        <img 
+          *ngIf="previewUrl" 
+          [src]="previewUrl" 
+          alt="Profile"
+          class="profile-image">
+        <div *ngIf="!previewUrl" class="no-image">
+          <span>No profile picture</span>
+        </div>
+      </div>
+
+      <!-- Upload Controls -->
+      <div class="upload-controls">
+        <input 
+          type="file" 
+          #fileInput
+          (change)="onFileSelected($event)"
+          accept="image/*"
+          style="display: none">
+        
+        <button 
+          (click)="fileInput.click()" 
+          class="btn-secondary"
+          [disabled]="loading">
+          Choose Image
+        </button>
+
+        <button 
+          *ngIf="selectedFile" 
+          (click)="uploadProfileImage()"
+          class="btn-primary"
+          [disabled]="loading">
+          {{ loading ? 'Uploading...' : 'Upload Image' }}
+        </button>
+
+        <button 
+          *ngIf="currentUser?.profileImage && !selectedFile" 
+          (click)="removeProfileImage()"
+          class="btn-danger"
+          [disabled]="loading">
+          Remove Image
+        </button>
+      </div>
+
+      <p class="upload-info">
+        Maximum file size: 5MB. Supported formats: JPG, PNG, GIF
+      </p>
+    </div>
+  </div>
+</div>

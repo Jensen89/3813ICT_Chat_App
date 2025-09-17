@@ -4,7 +4,6 @@
     <button (click)="goBack()" class="btn-back">← Back</button>
     <div class="chat-info">
       <h2>{{ group?.name }} / #{{ channel?.name }}</h2>
-      <!-- <span class="member-count">{{ channel?.members.length }} members</span> -->
     </div>
   </div>
 
@@ -13,12 +12,45 @@
     <div *ngFor="let message of messages" class="message" 
          [ngClass]="{'own-message': message.userId === currentUser?.id, 'system-message': message.userId === 'system'}">
       
-      <div *ngIf="message.userId !== 'system'" class="message-header">
-        <span class="message-author">{{ message.username }}</span>
-        <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+      <div *ngIf="message.userId !== 'system'" class="message-wrapper">
+        <!-- Profile Image -->
+        <div class="message-avatar" *ngIf="message.userId !== currentUser?.id">
+          <img 
+            *ngIf="message.profileImage" 
+            [src]="message.profileImage" 
+            [alt]="message.username"
+            class="avatar-img">
+          <div *ngIf="!message.profileImage" class="avatar-placeholder">
+            {{ message.username.charAt(0).toUpperCase() }}
+          </div>
+        </div>
+
+        <div class="message-body">
+          <div class="message-header">
+            <span class="message-author">{{ message.username }}</span>
+            <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+          </div>
+          
+          <div class="message-content">
+            {{ message.content }}
+          </div>
+        </div>
+
+        <!-- Profile Image for own messages (on right) -->
+        <div class="message-avatar" *ngIf="message.userId === currentUser?.id">
+          <img 
+            *ngIf="message.profileImage" 
+            [src]="message.profileImage" 
+            [alt]="message.username"
+            class="avatar-img">
+          <div *ngIf="!message.profileImage" class="avatar-placeholder">
+            {{ message.username.charAt(0).toUpperCase() }}
+          </div>
+        </div>
       </div>
       
-      <div class="message-content">
+      <!-- System messages -->
+      <div *ngIf="message.userId === 'system'" class="message-content">
         {{ message.content }}
       </div>
     </div>

@@ -5,6 +5,7 @@
     <div class="user-info">
       <span>Welcome, <strong>{{ currentUser?.username }}</strong></span>
       <span class="role-badge">{{ getRoleDisplay() }}</span>
+      <button (click)="navigateToProfile()" class="btn-profile">Profile</button>
       <button (click)="logout()" class="btn-logout">Logout</button>
       <button (click)="deleteUser(currentUser!)"class="btn-small btn-danger">Delete</button>
     </div>

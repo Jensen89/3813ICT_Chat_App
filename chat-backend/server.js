@@ -4,9 +4,19 @@ const bodyParser = require('body-parser');
 const { MongoClient, ObjectId } = require('mongodb');
 const http = require('http');
 const socketIo = require('socket.io');
+const { formidable } = require('formidable');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = 3000;
+
+//Create uploads dir if doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads', 'profiles');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Created uploads directory:', uploadsDir);
+}
 
 //Create HTTP server and socket.io instance
 const server = http.createServer(app);
@@ -17,9 +27,11 @@ const io = socketIo(server, {
   }
 });
 
-
 app.use(cors());
 app.use(bodyParser.json());
+
+//Serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 //Mongo connection
@@ -68,7 +80,8 @@ async function initialiseDefaultData() {
                 email: 'super@admin.com',
                 password: '123',
                 roles: ['super_admin', 'group_admin', 'user'],
-                groups: []
+                groups: [],
+                profileImage: null
             });
 
             //Default Group
@@ -183,7 +196,8 @@ app.post('/api/users', async (req, res) => {
       email,
       password,
       roles: ['user'],
-      groups: []
+      groups: [],
+      profileImage: null
     });
     
     const newUser = await usersCollection.findOne({ _id: result.insertedId });
@@ -266,7 +280,174 @@ app.post('/api/users/:id/promote', async (req, res) => {
   }
 });
     
+//Upload profile image
+app.post('/api/users/:id/upload-profile-image', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    //Configure formidable
+    const form = formidable({
+      uploadDir: uploadsDir,
+      keepExtensions: true,
+      maxFileSize: 5 * 1024 * 1024, //5MB max
+      multiples: false
+    });
 
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        console.error('Form parse error:', err);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Error uploading file',
+          error: err.message 
+        });
+      }
+
+      console.log('Files received:', files);
+
+      //Get the uploaded file
+      let uploadedFile;
+      if (files.image) {
+        uploadedFile = Array.isArray(files.image) ? files.image[0] : files.image;
+      }
+      
+      if (!uploadedFile) {
+        console.log('No image file in request');
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No image file provided' 
+        });
+      }
+
+      console.log('Processing file:', uploadedFile.originalFilename || uploadedFile.newFilename);
+
+      //Validate file type
+      const mimetype = uploadedFile.mimetype || '';
+      if (!mimetype.startsWith('image/')) {
+        //Clean up the uploaded file
+        if (uploadedFile.filepath && fs.existsSync(uploadedFile.filepath)) {
+          fs.unlinkSync(uploadedFile.filepath);
+        }
+        return res.status(400).json({ 
+          success: false, 
+          message: 'File must be an image' 
+        });
+      }
+
+      try {
+        //Get the user
+        const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+        if (!user) {
+          //Clean up uploaded file
+          if (uploadedFile.filepath && fs.existsSync(uploadedFile.filepath)) {
+            fs.unlinkSync(uploadedFile.filepath);
+          }
+          return res.status(404).json({ 
+            success: false, 
+            message: 'User not found' 
+          });
+        }
+
+        //Delete old profile image if exists
+        if (user.profileImage) {
+          const oldImagePath = path.join(__dirname, user.profileImage);
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath);
+            console.log('Deleted old profile image');
+          }
+        }
+
+        //Generate new filename
+        const fileExt = path.extname(uploadedFile.originalFilename || uploadedFile.newFilename || '.jpg');
+        const newFilename = `profile_${userId}_${Date.now()}${fileExt}`;
+        const newFilepath = path.join(uploadsDir, newFilename);
+        
+        console.log('Moving file from', uploadedFile.filepath, 'to', newFilepath);
+        
+        //Move/rename file to final location
+        if (uploadedFile.filepath !== newFilepath) {
+          fs.renameSync(uploadedFile.filepath, newFilepath);
+        }
+        
+        //Update user profile image in database
+        const profileImageUrl = `/uploads/profiles/${newFilename}`;
+        await usersCollection.updateOne(
+          { _id: new ObjectId(userId) },
+          { $set: { profileImage: profileImageUrl } }
+        );
+
+        //Get updated user
+        const updatedUser = await usersCollection.findOne({ _id: new ObjectId(userId) });
+        const formattedUser = formatDocument(updatedUser);
+        delete formattedUser.password;
+
+        console.log(`Profile image uploaded successfully: ${profileImageUrl}`);
+        
+        res.json({ 
+          success: true, 
+          message: 'Profile image uploaded successfully',
+          user: formattedUser,
+          profileImageUrl: `http://localhost:3000${profileImageUrl}`
+        });
+      } catch (innerError) {
+        console.error('Error processing upload:', innerError);
+        //Clean up file if error
+        if (uploadedFile.filepath && fs.existsSync(uploadedFile.filepath)) {
+          fs.unlinkSync(uploadedFile.filepath);
+        }
+        throw innerError;
+      }
+    });
+  } catch (error) {
+    console.error('Upload profile image error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error during upload',
+      error: error.message 
+    });
+  }
+});
+
+//Remove profile image
+app.delete('/api/users/:id/profile-image', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    //Get the user
+    const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    //Delete profile image file if exists
+    if (user.profileImage) {
+      const imagePath = path.join(__dirname, user.profileImage);
+      if (fs.existsSync(imagePath)) {
+        fs.removeSync(imagePath);
+      }
+    }
+
+    //Update user in database
+    await usersCollection.updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: { profileImage: null } }
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Profile image removed successfully' 
+    });
+  } catch (error) {
+    console.error('Remove profile image error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
 
 
 //GROUP ROUTES
@@ -572,6 +753,10 @@ io.on('connection', (socket) => {
   socket.on('send-message', async (data) => {
     const { channelId, userId, username, content } = data;
     const roomName = `channel-${channelId}`;
+
+    //Get user profile image
+    const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+    const profileImage = user?.profileImage ? `http://localhost:3000${user.profileImage}` : null;
     
     //Save message to database
     const message = {
@@ -579,6 +764,7 @@ io.on('connection', (socket) => {
       userId,
       username,
       content,
+      profileImage, 
       timestamp: new Date()
     };
     

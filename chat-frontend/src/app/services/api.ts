@@ -11,6 +11,7 @@ export interface User {
   password?: string;
   roles: string[];
   groups: string[];
+  profileImage?: string | null;
 }
 
 export interface Group {
@@ -44,8 +45,8 @@ export class Api {
     }
   }
 
+  
   //Authentication Methods
-
   login(username: string, password: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/auth/login`, { username, password })
       .pipe(
@@ -110,8 +111,19 @@ export class Api {
     return this.http.post<any>(`${this.baseUrl}/users/${userId}/promote`, { role });
   }
 
-  //Group Methods
+  uploadProfileImage(userId: string, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('image', file);
 
+    return this.http.post<any>(`${this.baseUrl}/users/${userId}/upload-profile-image`, formData);
+  }
+
+  removeProfileImage(userId: string): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/users/${userId}/profile-image`);
+  }
+
+
+  //Group Methods
   getGroups(): Observable<Group[]> {
     return this.http.get<Group[]>(`${this.baseUrl}/groups`);
   }

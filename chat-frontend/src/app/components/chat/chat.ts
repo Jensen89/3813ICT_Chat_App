@@ -37,7 +37,6 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-    console.log('Chat route params:', params);
   });
     this.currentUser = this.apiService.getCurrentUser();
     
