@@ -1,14 +1,22 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const fs = require('fs');
-const path = require('path');
-const { group } = require('console');
-
 const { MongoClient, ObjectId } = require('mongodb');
+const http = require('http');
+const socketIo = require('socket.io');
 
 const app = express();
 const PORT = 3000;
+
+//Create HTTP server and socket.io instance
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "http://localhost:4200",
+    methods: ["GET", "POST"]
+  }
+});
+
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -59,7 +67,7 @@ async function initialiseDefaultData() {
                 username: 'super',
                 email: 'super@admin.com',
                 password: '123',
-                roles: ['super-admin', 'group-admin', 'user'],
+                roles: ['super_admin', 'group_admin', 'user'],
                 groups: []
             });
 
@@ -463,7 +471,7 @@ app.delete('/api/channels/:id', async (req, res) => {
   }
 });
 
-// Join channel
+//Join channel
 app.post('/api/channels/:id/join', async (req, res) => {
   try {
     const { userId } = req.body;
@@ -481,7 +489,7 @@ app.post('/api/channels/:id/join', async (req, res) => {
   }
 });
 
-// Leave channel
+//Leave channel
 app.post('/api/channels/:id/leave', async (req, res) => {
   try {
     const { userId } = req.body;
@@ -500,6 +508,116 @@ app.post('/api/channels/:id/leave', async (req, res) => {
 });
 
 
+
+
+//CHAT FUNCTIONALITY
+
+//Track connected users
+const connectedUsers = new Map();
+const userSockets = new Map();
+
+io.on('connection', (socket) => {
+  console.log('New socket connection:', socket.id);
+
+  //User joins the chat system
+  socket.on('user-connect', async (userData) => {
+    const { userId, username } = userData;
+    connectedUsers.set(socket.id, { userId, username });
+    userSockets.set(userId, socket.id);
+    console.log(`User ${username} connected`);
+
+    //Join all channels the user is a member of
+    const channels = await channelsCollection.find({ members: userId }).toArray();
+    for (const channel of channels) {
+      socket.join(`channel-${channel._id}`);
+      console.log(`User ${username} joined channel room: channel-${channel._id}`);
+    }
+  });
+
+  //User joins a specific channel
+  socket.on('join-channel', async (data) => {
+    const { channelId, userId, username } = data;
+    const roomName = `channel-${channelId}`;
+    
+    socket.join(roomName);
+    console.log(`${username} joined channel ${channelId}`);
+    
+    //Load and send recent messages (last 50)
+    const messages = await messagesCollection
+      .find({ channelId })
+      .sort({ timestamp: -1 })
+      .limit(50)
+      .toArray();
+    
+    const formattedMessages = messages.reverse().map(formatDocument);
+    socket.emit('message-history', formattedMessages);
+    
+    //Notify others in the channel
+    socket.to(roomName).emit('user-joined', { username, channelId });
+  });
+
+  //User leaves a channel
+  socket.on('leave-channel', (data) => {
+    const { channelId, username } = data;
+    const roomName = `channel-${channelId}`;
+    
+    socket.leave(roomName);
+    console.log(`${username} left channel ${channelId}`);
+    
+    //Notify others in the channel
+    socket.to(roomName).emit('user-left', { username, channelId });
+  });
+
+  //Handle sending messages
+  socket.on('send-message', async (data) => {
+    const { channelId, userId, username, content } = data;
+    const roomName = `channel-${channelId}`;
+    
+    //Save message to database
+    const message = {
+      channelId,
+      userId,
+      username,
+      content,
+      timestamp: new Date()
+    };
+    
+    const result = await messagesCollection.insertOne(message);
+    const savedMessage = { ...message, id: result.insertedId.toString() };
+    
+    console.log(`Message from ${username} in channel ${channelId}: ${content}`);
+    
+    //Send message to all users in the channel
+    io.to(roomName).emit('new-message', formatDocument(savedMessage));
+  });
+
+  //Handle typing indicators
+  socket.on('typing', (data) => {
+    const { channelId, username } = data;
+    const roomName = `channel-${channelId}`;
+    socket.to(roomName).emit('user-typing', { username, channelId });
+  });
+
+  socket.on('stop-typing', (data) => {
+    const { channelId, username } = data;
+    const roomName = `channel-${channelId}`;
+    socket.to(roomName).emit('user-stop-typing', { username, channelId });
+  });
+
+  //Handle disconnect
+  socket.on('disconnect', () => {
+    const user = connectedUsers.get(socket.id);
+    if (user) {
+      console.log(`User ${user.username} disconnected`);
+      connectedUsers.delete(socket.id);
+      userSockets.delete(user.userId);
+      
+      //Notify all channels the user was in
+      io.emit('user-disconnected', { username: user.username });
+    }
+  });
+});
+
 //Base route
 app.get('/', (req, res) => {
   res.json({ 
@@ -511,6 +629,28 @@ app.get('/', (req, res) => {
 });
 
 
-app.listen(PORT, () => {
+//MESSAGE ROUTES
+
+//Get messages for a channel
+app.get('/api/channels/:channelId/messages', async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const limit = parseInt(req.query.limit) || 50;
+    
+    const messages = await messagesCollection
+      .find({ channelId })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .toArray();
+    
+    const formattedMessages = messages.reverse().map(formatDocument);
+    res.json(formattedMessages);
+  } catch (error) {
+    console.error('Get messages error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

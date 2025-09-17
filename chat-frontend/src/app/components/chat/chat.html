@@ -1,1 +1,46 @@
-<p>chat works!</p>
+<div class="chat-container">
+  <!-- Header -->
+  <div class="chat-header">
+    <button (click)="goBack()" class="btn-back">← Back</button>
+    <div class="chat-info">
+      <h2>{{ group?.name }} / #{{ channel?.name }}</h2>
+      <!-- <span class="member-count">{{ channel?.members.length }} members</span> -->
+    </div>
+  </div>
+
+  <!-- Messages Area -->
+  <div class="messages-container" #scrollContainer>
+    <div *ngFor="let message of messages" class="message" 
+         [ngClass]="{'own-message': message.userId === currentUser?.id, 'system-message': message.userId === 'system'}">
+      
+      <div *ngIf="message.userId !== 'system'" class="message-header">
+        <span class="message-author">{{ message.username }}</span>
+        <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+      </div>
+      
+      <div class="message-content">
+        {{ message.content }}
+      </div>
+    </div>
+
+    <!-- Typing Indicator -->
+    <div *ngIf="typingUsers.size > 0" class="typing-indicator">
+      <span class="typing-dots">
+        <span></span><span></span><span></span>
+      </span>
+      {{ getTypingText() }}
+    </div>
+  </div>
+
+  <!-- Input Area -->
+  <div class="input-container">
+    <input 
+      type="text" 
+      [(ngModel)]="newMessage" 
+      (keyup.enter)="sendMessage()"
+      (keyup)="onTyping()"
+      placeholder="Type a message..."
+      class="message-input">
+    <button (click)="sendMessage()" class="btn-send">Send</button>
+  </div>
+</div>

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Api, User, Group } from '../../services/api';
+import { SocketService } from '../../services/socket';
 
 @Component({
   selector: 'app-dashboard',
@@ -20,7 +21,7 @@ export class Dashboard implements OnInit {
   
   loading = true;
 
-  constructor(private api: Api, private router: Router) {}
+  constructor(private api: Api, private router: Router, private socketService: SocketService) {}
 
   ngOnInit(): void {
     this.currentUser = this.api.getCurrentUser();
@@ -29,9 +30,13 @@ export class Dashboard implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
+
+    //Connect to socket when user logs in
+    this.socketService.connectUser(this.currentUser.id, this.currentUser.username);
+    
     this.loadUserGroups();
     this.loadUsers();
-  }
+  } 
 
   getRoleDisplay(): string {
     if (!this.currentUser) return '';
@@ -120,6 +125,7 @@ export class Dashboard implements OnInit {
   }
 
   logout(): void {
+    this.socketService.disconnect();
     this.api.logout();
     this.router.navigate(['/login']);
   }

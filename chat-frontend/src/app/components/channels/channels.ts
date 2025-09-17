@@ -188,7 +188,6 @@ export class Channels implements OnInit {
 
 
   navigateToChat(channelId: string): void {
-    // Phase 2 - For now just navigate to placeholder
     this.router.navigate(['/chat', this.group!.id, channelId]);
   }
 
