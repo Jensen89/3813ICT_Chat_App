@@ -13,9 +13,14 @@ const PORT = 3000;
 
 //Create uploads dir if doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads', 'profiles');
+const messagesDir = path.join(__dirname, 'uploads', 'messages');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log('Created uploads directory:', uploadsDir);
+}
+if (!fs.existsSync(messagesDir)) {
+  fs.mkdirSync(messagesDir, { recursive: true });
+  console.log('Created messages directory:', messagesDir);
 }
 
 //Create HTTP server and socket.io instance
@@ -751,7 +756,7 @@ io.on('connection', (socket) => {
 
   //Handle sending messages
   socket.on('send-message', async (data) => {
-    const { channelId, userId, username, content } = data;
+    const { channelId, userId, username, content, messageType = 'text' } = data;
     const roomName = `channel-${channelId}`;
 
     //Get user profile image
@@ -764,6 +769,7 @@ io.on('connection', (socket) => {
       userId,
       username,
       content,
+      messageType, //Text or Image
       profileImage, 
       timestamp: new Date()
     };
@@ -837,6 +843,100 @@ app.get('/api/channels/:channelId/messages', async (req, res) => {
   }
 });
 
+//Upload image for chat message
+app.post('/api/messages/upload-image', async (req, res) => {
+  try {
+    console.log('Chat image upload request');
+    
+    //Ensure upload directory exists
+    if (!fs.existsSync(messagesDir)) {
+      fs.mkdirSync(messagesDir, { recursive: true });
+    }
+    
+    const form = formidable({
+      uploadDir: messagesDir,
+      keepExtensions: true,
+      maxFileSize: 10 * 1024 * 1024, // 10MB max for chat images
+      multiples: false
+    });
+
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        console.error('Form parse error:', err);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Error uploading file',
+          error: err.message 
+        });
+      }
+
+      //Get the uploaded file
+      let uploadedFile;
+      if (files.image) {
+        uploadedFile = Array.isArray(files.image) ? files.image[0] : files.image;
+      }
+      
+      if (!uploadedFile) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No image file provided' 
+        });
+      }
+
+      //Validate file type
+      const mimetype = uploadedFile.mimetype || '';
+      if (!mimetype.startsWith('image/')) {
+        if (uploadedFile.filepath && fs.existsSync(uploadedFile.filepath)) {
+          fs.unlinkSync(uploadedFile.filepath);
+        }
+        return res.status(400).json({ 
+          success: false, 
+          message: 'File must be an image' 
+        });
+      }
+
+      try {
+        //Generate unique filename
+        const fileExt = path.extname(uploadedFile.originalFilename || uploadedFile.newFilename || '.jpg');
+        const newFilename = `msg_${Date.now()}_${Math.random().toString(36).substring(7)}${fileExt}`;
+        const newFilepath = path.join(messagesDir, newFilename);
+        
+        console.log('Moving chat image from', uploadedFile.filepath, 'to', newFilepath);
+        
+        //Move file to final location
+        if (uploadedFile.filepath !== newFilepath) {
+          fs.renameSync(uploadedFile.filepath, newFilepath);
+        }
+        
+        const imageUrl = `/uploads/messages/${newFilename}`;
+        console.log('Chat image uploaded successfully:', imageUrl);
+        
+        res.json({ 
+          success: true, 
+          message: 'Image uploaded successfully',
+          imageUrl: `http://localhost:3000${imageUrl}`
+        });
+      } catch (innerError) {
+        console.error('Error processing chat image:', innerError);
+        if (uploadedFile.filepath && fs.existsSync(uploadedFile.filepath)) {
+          fs.unlinkSync(uploadedFile.filepath);
+        }
+        throw innerError;
+      }
+    });
+  } catch (error) {
+    console.error('Upload chat image error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error during upload',
+      error: error.message 
+    });
+  }
+});
+
+
+
+//SERVER
 server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

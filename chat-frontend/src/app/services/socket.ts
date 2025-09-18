@@ -8,6 +8,7 @@ export interface Message {
   userId: string;
   username: string;
   content: string;
+  messageType?: 'text' | 'image';
   profileImage?: string | null;
   timestamp: Date;
 }
@@ -38,13 +39,14 @@ export class SocketService {
     this.socket.emit('leave-channel', { channelId, username });
   }
 
-  //Send a message
-  sendMessage(channelId: string, userId: string, username: string, content: string): void {
+  //Send a text message
+  sendMessage(channelId: string, userId: string, username: string, content: string, messageType: 'text' | 'image' = 'text'): void {
     this.socket.emit('send-message', { 
       channelId, 
       userId, 
       username, 
-      content 
+      content,
+      messageType,
     });
   }
 

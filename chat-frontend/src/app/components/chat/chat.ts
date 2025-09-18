@@ -14,6 +14,7 @@ import { Subscription } from 'rxjs';
 })
 export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+  @ViewChild('imageInput') private imageInput!: ElementRef;
 
   currentUser: User | null = null;
   group: Group | null = null;
@@ -22,6 +23,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   messages: Message[] = [];
   newMessage = '';
   typingUsers: Set<string> = new Set();
+
+  //Image upload
+  selectedImage: File | null = null;
+  imagePreview: string | null = null;
+  uploadingImage = false;
   
   //Subscriptions
   private subscriptions: Subscription[] = [];
@@ -161,11 +167,87 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.channel.id,
       this.currentUser.id,
       this.currentUser.username,
-      this.newMessage
+      this.newMessage,
+      'text'
     );
 
     this.newMessage = '';
     this.stopTyping();
+  }
+
+  onImageSelected(event: any): void {
+    const file = event.target.files[0];
+    
+    if (file) {
+      //Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      //Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Image size must be less than 10MB');
+        return;
+      }
+
+      this.selectedImage = file;
+
+      //Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.imagePreview = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  sendImage(): void {
+    if (!this.selectedImage || !this.channel || !this.currentUser) return;
+
+    this.uploadingImage = true;
+
+    this.apiService.uploadChatImage(this.selectedImage).subscribe({
+      next: (response) => {
+        if (response.success && this.channel && this.currentUser) {
+          //Send image URL as message
+          this.socketService.sendMessage(
+            this.channel.id,
+            this.currentUser.id,
+            this.currentUser.username,
+            response.imageUrl,
+            'image'
+          );
+
+          //Clear selection
+          this.selectedImage = null;
+          this.imagePreview = null;
+          if (this.imageInput) {
+            this.imageInput.nativeElement.value = '';
+          }
+        }
+        this.uploadingImage = false;
+      },
+      error: (error) => {
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image');
+        this.uploadingImage = false;
+      }
+    });
+  }
+
+  cancelImageSelection(): void {
+    this.selectedImage = null;
+    this.imagePreview = null;
+    if (this.imageInput) {
+      this.imageInput.nativeElement.value = '';
+    }
+  }
+
+  triggerImageSelect(): void {
+    if (this.imageInput) {
+      this.imageInput.nativeElement.click();
+    }
   }
 
   onTyping(): void {

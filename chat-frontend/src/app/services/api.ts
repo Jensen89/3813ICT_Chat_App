@@ -122,6 +122,12 @@ export class Api {
     return this.http.delete<any>(`${this.baseUrl}/users/${userId}/profile-image`);
   }
 
+  uploadChatImage(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    return this.http.post<any>(`${this.baseUrl}/messages/upload-image`, formData);
+  }
 
   //Group Methods
   getGroups(): Observable<Group[]> {
